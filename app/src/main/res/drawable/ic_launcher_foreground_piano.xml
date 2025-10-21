@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Piano keyboard icon -->
+    <group
+        android:translateX="24"
+        android:translateY="30">
+        
+        <!-- White keys background -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M0,0 L60,0 L60,48 L0,48 Z"/>
+        
+        <!-- White key separators -->
+        <path
+            android:fillColor="#1A1A1A"
+            android:strokeWidth="1.5"
+            android:pathData="M10,0 L10,48 M20,0 L20,48 M30,0 L30,48 M40,0 L40,48 M50,0 L50,48"/>
+        
+        <!-- Black keys -->
+        <!-- C# -->
+        <path
+            android:fillColor="#1A1A1A"
+            android:pathData="M7,0 L13,0 L13,28 L7,28 Z"/>
+        <!-- D# -->
+        <path
+            android:fillColor="#1A1A1A"
+            android:pathData="M17,0 L23,0 L23,28 L17,28 Z"/>
+        <!-- F# -->
+        <path
+            android:fillColor="#1A1A1A"
+            android:pathData="M37,0 L43,0 L43,28 L37,28 Z"/>
+        <!-- G# -->
+        <path
+            android:fillColor="#1A1A1A"
+            android:pathData="M47,0 L53,0 L53,28 L47,28 Z"/>
+        
+        <!-- Border -->
+        <path
+            android:strokeColor="#1A1A1A"
+            android:strokeWidth="2"
+            android:fillColor="#00000000"
+            android:pathData="M0,0 L60,0 L60,48 L0,48 Z"/>
+    </group>
+</vector>

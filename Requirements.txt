@@ -1,0 +1,248 @@
+# Piano App — Requirements & Step-by-step Workplan
+Target platform: Android (Kotlin, Android Studio)
+Purpose: Provide a detailed, actionable requirements file for LLMs and coding agents to implement a piano app where:
+- All piano keys are visible
+- Tapping a key plays the corresponding sound (low-latency)
+- User can record a piano session, save locally (with prompted filename), delete saved recordings, and play recordings
+
+Notes / assumptions
+- Use Kotlin for Android implementation.
+- Use modern Android tooling (Android Studio, Gradle, AndroidX).
+- Prefer app-private external storage (context.getExternalFilesDir) for saved audio to avoid complex permissions.
+- For low-latency playback of many short samples: use SoundPool or an audio-synthesis approach.
+- For recording: store as a sequence of timestamped note events during the session, then render to PCM/WAV when saving. This avoids trying to capture device output (which is restricted).
+- UI can be implemented either with Jetpack Compose (recommended) or XML layouts. The plan notes both options where relevant.
+- Short variable names preferred, but keep code readable.
+
+High-level components
+- UI layer (Activity/Fragment or Compose) — piano keyboard, transport controls (record, stop, play, save, delete), recordings list
+- SoundEngine — plays notes with low latency; exposes play(note, velocity)
+- Recorder — records sequence of note events with timestamps during recording session
+- Renderer — converts recorded event sequence to PCM/WAV file (mixes note samples or synthesizes)
+- StorageManager — save/load/delete audio files and metadata
+- Playback — play saved audio files (MediaPlayer or AudioTrack)
+- ViewModel(s) — MVVM flow tying UI to SoundEngine / Recorder / Storage
+- Tests — unit tests for event serialization, rendering; instrumentation tests for UI
+
+User stories & acceptance criteria
+1) As a user, I want to see a full piano keyboard on screen and tap keys to hear notes.
+   - AC1: All keys (at least 2+ octaves, ideal full 88-key scrollable option) are visible and tappable.
+   - AC2: When tapping a key, the correct pitch plays with <50ms perceived latency.
+   - AC3: Multiple simultaneous notes (chords) are playable.
+
+2) As a user, I want to record my session.
+   - AC1: A "Record" button starts recording note events.
+   - AC2: A visible indicator shows recording is active.
+   - AC3: A "Stop" button ends recording and stores the recorded event sequence in memory.
+
+3) As a user, I want to save a recorded session to a local audio file with a chosen filename.
+   - AC1: On saving, show a popup dialog asking for filename (validate non-empty).
+   - AC2: Render recorded events to a WAV file and save under app external files directory.
+   - AC3: Provide success/failure feedback to user.
+   - AC4: Saved files are listed in the Recordings list with filename, length, created date.
+
+4) As a user, I want to play and delete saved recordings.
+   - AC1: Tap a saved item to play it (play/pause UI).
+   - AC2: Long-press or a delete icon triggers a confirmation then delete file.
+   - AC3: Deleted files are removed from the list immediately.
+
+5) Non-functional:
+   - AC1: App works offline.
+   - AC2: Rendering and saving should be done off the UI thread.
+   - AC3: Files use WAV (uncompressed) or MP3/OGG (if encoding lib available). WAV recommended for simplicity.
+
+Technical design decisions (recommended)
+- UI: Jetpack Compose (faster iteration, simpler for dynamic keyboard). Alternatively use ConstraintLayout XML.
+- Sound engine: SoundPool for immediate playback of short samples. Load pre-sampled piano notes (one per semitone) from res/raw. Use multiple streams for chords. For more realism, use a small sample set and pitch-shift (careful with artifacting).
+- Recording: Record note events: {noteId, velocity, timestampMillis, durationOptional} where timestamp is relative to recording start. On key release, set duration if you want note length; otherwise record "note on" and infer lengths via "note off" events or fixed note lengths.
+- Rendering: Two choices:
+  - Mix sample WAV files according to events and write output PCM -> WAV. Use simple PCM mixing (32-bit accumulate, then normalize/clamp), then write 16-bit WAV. No external permissions needed.
+  - Or record stream output — not recommended due to platform constraints.
+- Playback of saved file: Use MediaPlayer (simple) or AudioTrack (for custom streaming). MediaPlayer is simplest for WAV playback.
+- Storage: Save files under context.getExternalFilesDir(Environment.DIRECTORY_MUSIC) or app files directory. No runtime WRITE_EXTERNAL_STORAGE required for app-specific external storage on modern Android.
+- Concurrency: Use coroutines (Dispatchers.IO) for long-running tasks (rendering, file I/O).
+
+Data formats
+- Recorded session JSON schema (in-memory and optional on-disk):
+  - recording:
+    - events: [{type: "note_on"|"note_off", note: int (MIDI 0-127), vel: int, t: long(ms)}]
+    - created_at: ISO timestamp
+    - length_ms: int
+- Saved audio file: WAV file with proper RIFF headers, 44-byte header, 16-bit PCM, sampleRate e.g., 44100 Hz, mono or stereo.
+- File naming: user-supplied name sanitized (remove illegal chars) + timestamp fallback.
+
+Security & permissions
+- RECORD_AUDIO not required if we implement event-based recording. If user wants microphone recording overlay, request RECORD_AUDIO with runtime permission and privacy rationale.
+- No storage permission needed for app external files dir on modern Android.
+
+Assets
+- Pre-sampled piano note WAV files (res/raw): ideally one per semitone in the range used (e.g., C3..C6).
+- UI icons (record, stop, play, save, delete).
+
+Step-by-step implementation plan (atomic tasks for coding agents)
+Each task should be a small PR with title, description, files to create/change, tests, and acceptance criteria.
+
+Phase 0 — Repo & baseline
+- Task 0.1: Initialize Android Studio project (Kotlin), target SDK modern (e.g., 33+), minSdk 21+.
+  - Files: build.gradle, settings.gradle, AndroidManifest.xml
+  - AC: Project builds successfully.
+- Task 0.2: Add dependencies: androidx.lifecycle, compose (if using), coroutine, junit, media libs.
+  - AC: Gradle sync OK.
+
+Phase 1 — UI & keyboard
+- Task 1.1: Create Keyboard UI component (Composable or View).
+  - Files: ui/KeyboardView.kt or Compose file
+  - Features: Render keys (white/black), detect taps, multi-touch support.
+  - AC: Visual keyboard shows 2 octaves, taps produce callbacks with noteId.
+- Task 1.2: Hook Keyboard to placeholder SoundEngine that logs note callbacks.
+  - AC: Tapping keys logs events.
+
+Phase 2 — Sound playback
+- Task 2.1: Implement SoundEngine using SoundPool to load raw note samples.
+  - Files: audio/SoundEngine.kt
+  - Methods: init(context), play(note, vel), release()
+  - AC: Tapping keys immediately plays correct note sample.
+- Task 2.2: Support chords (concurrent streams).
+  - AC: Pressing multiple keys plays multiple notes.
+
+Phase 3 — Recording event stream
+- Task 3.1: Implement Recorder class to capture note events and timestamps.
+  - Files: audio/Recorder.kt
+  - API: start(), stop(), recordNoteOn(note, vel), recordNoteOff(note), getRecording()
+  - AC: When recording, the recorder captures events with timestamps relative to start.
+- Task 3.2: Add recording UI controls (Record/Stop) and indicator.
+  - Files: ui/TransportControls.kt
+  - AC: Press Record to start; indicator visible; stop to end recording and show recorded duration.
+
+Phase 4 — Render & Save
+- Task 4.1: Implement Renderer to mix note sample WAVs according to events into PCM buffer and write WAV.
+  - Files: audio/Renderer.kt
+  - Implementation notes:
+    - Load sample PCM for each note (res/raw)
+    - For each event, add sample buffer into output buffer at the correct offset
+    - Normalize/clamp and write 16-bit PCM WAV header then data
+  - AC: Renderer produces a valid WAV file playable by MediaPlayer.
+- Task 4.2: Implement Save flow:
+  - UI: On "Save" show AlertDialog to ask filename.
+  - Backend: call Renderer in coroutine, write to getExternalFilesDir(MUSIC)/<safeName>.wav
+  - AC: After saving, file appears in recordings list and is playable.
+
+Phase 5 — Playback & deletion
+- Task 5.1: Implement Recording list UI, item actions: Play/Pause, Delete, Info.
+  - Files: ui/RecordingsList.kt
+  - AC: Tap to play; playing state shows; delete prompts confirmation and deletes file from storage.
+- Task 5.2: Implement Playback Manager (MediaPlayer wrapper) to play saved WAV.
+  - Files: audio/PlaybackMgr.kt
+  - AC: Play/Pause works; playback stops at end and UI updates.
+
+Phase 6 — Persistence & metadata
+- Task 6.1: Store metadata JSON for recordings (filename, createdAt, durationMs).
+  - Files: data/RecordingRepo.kt
+  - AC: On app restart, recordings list is populated from files + metadata.
+
+Phase 7 — Tests & polish
+- Task 7.1: Unit tests for Recorder event timestamps and event serialization.
+- Task 7.2: Unit/integration test for Renderer producing WAV of expected length.
+- Task 7.3: Instrumentation tests for UI flows: record -> save -> play -> delete (Espresso/Compose testing).
+- Task 7.4: Performance test for latency and concurrency (optional).
+
+Phase 8 — Optional enhancements
+- Multi-octave scroll/zoom, sustain pedal, velocity sensitivity, sample loading progress, export/share recordings, encode to MP3/OGG using LAME or Android MediaCodec.
+
+Detailed API & interface suggestions
+- SoundEngine (singleton or injected)
+  - init(context)
+  - play(note: Int, vel: Int = 127)
+  - stop(note: Int) // optional
+  - release()
+- Recorder
+  - start()
+  - stop()
+  - onNoteOn(note, vel)
+  - onNoteOff(note)
+  - clear()
+  - getEvents(): List<Event>
+- Renderer
+  - renderToWav(events: List<Event>, outFile: File, sampleRate: Int = 44100): Result<File>
+- PlaybackMgr
+  - play(file: File)
+  - pause()
+  - stop()
+  - isPlaying(): Boolean
+
+Example acceptance tests (explicit)
+- Play test:
+  - Given app open
+  - When user taps key for Middle C
+  - Then sound matching sample 'c4.wav' plays within 50ms
+- Record/save/play cycle:
+  - Start record, play C4, E4, G4 with timestamps, stop
+  - Save as "MyChord"
+  - File exists in app external music dir: "MyChord.wav"
+  - MediaPlayer can play file end-to-end without crash
+
+File-level blueprint (suggested files to create)
+- app/src/main/AndroidManifest.xml
+- app/build.gradle
+- src/main/java/com/yourapp/MainActivity.kt (or MainScreen.kt for Compose)
+- src/main/java/com/yourapp/ui/KeyboardView.kt or KeyboardComposable.kt
+- src/main/java/com/yourapp/ui/TransportControls.kt
+- src/main/java/com/yourapp/ui/RecordingsList.kt
+- src/main/java/com/yourapp/audio/SoundEngine.kt
+- src/main/java/com/yourapp/audio/Recorder.kt
+- src/main/java/com/yourapp/audio/Renderer.kt
+- src/main/java/com/yourapp/audio/PlaybackMgr.kt
+- src/main/java/com/yourapp/data/RecordingRepo.kt
+- res/raw/*.wav (note samples)
+- res/drawable/*.png (icons)
+
+LLM / coding agent instructions for each task (how to produce a PR)
+- PR title: short descriptive title (e.g., "Add SoundEngine using SoundPool")
+- PR description:
+  - What changed
+  - Files added/modified (list)
+  - How to test manually (steps)
+  - Acceptance criteria (copy the AC)
+- Tests included: unit tests + manual test steps
+- Commit style: small commits per logical change; use short variable names but clear names in Kotlin (e.g., noteId, tStart, recEvents)
+
+Edge cases and notes to handle
+- Overlapping notes and mixing: ensure no integer overflow when mixing PCM; use float accumulation and clamp.
+- Filename collisions: append timestamp if filename already exists.
+- Invalid filename characters: sanitize, disallow empty string.
+- Handle apps pause/stop during recording: auto-stop and optionally save in temp.
+- Low memory: stream rendering in chunks instead of holding huge arrays for long recordings.
+- Latency tuning: prioritize SoundPool stream allocation and preloading; use audio attributes appropriate for music.
+
+Work breakdown for LLM/coding-agent (short checklist)
+- [ ] Initialize project
+- [ ] Implement keyboard UI
+- [ ] Implement SoundEngine (SoundPool)
+- [ ] Connect keyboard -> SoundEngine
+- [ ] Implement Recorder to capture events
+- [ ] Add UI controls for record/stop
+- [ ] Implement Renderer -> WAV
+- [ ] Prompt dialog to save filename; call Renderer
+- [ ] Implement recordings list UI and PlaybackMgr
+- [ ] Implement delete flow with confirmation
+- [ ] Add persistence/metadata
+- [ ] Tests: unit & instrumentation
+- [ ] Polish: icons, UX, sample quality
+
+Appendix: Minimal sample JSON for recorded events
+{
+  "created_at":"2025-10-19T17:00:00Z",
+  "sampleRate":44100,
+  "events":[
+    {"type":"note_on","note":60,"vel":110,"t":0},
+    {"type":"note_off","note":60,"t":400},
+    {"type":"note_on","note":64,"vel":100,"t":500},
+    {"type":"note_off","note":64,"t":900}
+  ],
+  "length_ms":900
+}
+
+What's next
+- Choose UI framework (Compose vs XML). I recommend Jetpack Compose.
+- Provide target octaves and sample set you prefer (e.g., C3..C6) so the coding agent can include proper assets.
+- If you'd like, I can generate the first PR: create the project skeleton + keyboard UI (Compose) and a stub SoundEngine.
