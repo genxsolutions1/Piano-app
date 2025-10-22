@@ -19,8 +19,8 @@
 }
 
 # Keep all Piano app classes (don't obfuscate)
--keep class com.example.piano.** { *; }
--keepclassmembers class com.example.piano.** { *; }
+-keep class com.genxsolutions.piano.** { *; }
+-keepclassmembers class com.genxsolutions.piano.** { *; }
 
 # Keep audio engine and MediaPlayer
 -keep class android.media.** { *; }

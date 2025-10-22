@@ -1,4 +1,4 @@
-package com.example.piano.viewmodel
+package com.genxsolutions.piano.viewmodel
 
 import android.app.Application
 import androidx.compose.runtime.getValue
@@ -6,9 +6,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.piano.audio.*
-import com.example.piano.data.Recording
-import com.example.piano.data.RecordingRepo
+import com.genxsolutions.piano.audio.*
+import com.genxsolutions.piano.data.Recording
+import com.genxsolutions.piano.data.RecordingRepo
 import kotlinx.coroutines.launch
 
 class PianoViewModel(app: Application) : AndroidViewModel(app) {

@@ -1,4 +1,4 @@
-package com.example.piano
+package com.genxsolutions.piano
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -20,11 +20,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.Alignment
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.piano.ui.KeyboardView
-import com.example.piano.ui.RecordingsList
-import com.example.piano.ui.TransportControls
-import com.example.piano.ui.theme.PianoTheme
-import com.example.piano.viewmodel.PianoViewModel
+import com.genxsolutions.piano.ui.KeyboardView
+import com.genxsolutions.piano.ui.RecordingsList
+import com.genxsolutions.piano.ui.TransportControls
+import com.genxsolutions.piano.ui.theme.PianoTheme
+import com.genxsolutions.piano.viewmodel.PianoViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

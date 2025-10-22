@@ -1,4 +1,4 @@
-package com.example.piano.ui.theme
+package com.genxsolutions.piano.ui.theme
 
 import android.app.Activity
 import android.os.Build

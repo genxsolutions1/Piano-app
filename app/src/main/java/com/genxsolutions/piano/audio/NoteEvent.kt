@@ -1,4 +1,4 @@
-package com.example.piano.audio
+package com.genxsolutions.piano.audio
 
 data class NoteEvent(
     val type: EventType,
