@@ -1,4 +1,4 @@
-package com.example.piano.ui
+package com.genxsolutions.piano.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,7 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.piano.data.Recording
+import com.genxsolutions.piano.data.Recording
 
 @Composable
 fun RecordingsList(

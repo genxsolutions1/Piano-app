@@ -1,4 +1,4 @@
-package com.example.piano.ui.theme
+package com.genxsolutions.piano.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

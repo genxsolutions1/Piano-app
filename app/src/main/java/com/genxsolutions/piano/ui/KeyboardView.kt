@@ -1,4 +1,4 @@
-package com.example.piano.ui
+package com.genxsolutions.piano.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border

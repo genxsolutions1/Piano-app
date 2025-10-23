@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.piano"
+    namespace = "com.genxsolutions.piano"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.piano"
+        applicationId = "com.genxsolutions.piano"
         minSdk = 26
         targetSdk = 36
         versionCode = 1

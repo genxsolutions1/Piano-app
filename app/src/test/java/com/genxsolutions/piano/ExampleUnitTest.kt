@@ -1,8 +1,8 @@
-package com.example.piano
+package com.genxsolutions.piano
 
-import com.example.piano.audio.EventType
-import com.example.piano.audio.NoteEvent
-import com.example.piano.audio.Recorder
+import com.genxsolutions.piano.audio.EventType
+import com.genxsolutions.piano.audio.NoteEvent
+import com.genxsolutions.piano.audio.Recorder
 import org.junit.Test
 import org.junit.Assert.*
 import org.junit.Before

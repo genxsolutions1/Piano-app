@@ -1,4 +1,4 @@
-package com.example.piano.data
+package com.genxsolutions.piano.data
 
 data class Recording(
     val filename: String,
